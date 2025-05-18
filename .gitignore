@@ -1,0 +1,21 @@
+# Ignorar archivos de compilación
+build/
+*.o
+*.a
+*.so
+*.dll
+
+# Ignorar archivos generados por Qt
+*.pro.user
+*.qmake.stash
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+# Ignorar archivos temporales o de autosave
+CMakeLists.txt.autosave
+CMakeLists.txt.user
+
+# Ignorar archivos del sistema operativo
+.DS_Store
+Thumbs.db
