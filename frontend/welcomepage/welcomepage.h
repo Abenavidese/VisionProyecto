@@ -1,0 +1,4 @@
+#ifndef WELCOMEPAGE_H
+#define WELCOMEPAGE_H
+
+#endif // WELCOMEPAGE_H

@@ -1,0 +1,2 @@
+set(__QT_DEPLOY_TARGET_VisorNiftiQt_FILE /home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/VisorNiftiQt)
+set(__QT_DEPLOY_TARGET_VisorNiftiQt_TYPE EXECUTABLE)

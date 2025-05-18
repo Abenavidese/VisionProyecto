@@ -1,0 +1,112 @@
+cmake_minimum_required(VERSION 3.16)
+
+# Nombre del proyecto
+project(VisorNiftiQt VERSION 0.1 LANGUAGES CXX)
+
+# Configuraciones automáticas para Qt
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+# Estándar de C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Buscar Qt
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+
+# Buscar ITK
+set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0") # Ruta donde está instalado ITK
+find_package(ITK REQUIRED)
+include_directories(${ITK_INCLUDE_DIRS})    # Incluir headers de ITK
+link_directories(${ITK_LIBRARY_DIRS})       # Enlazar librerías de ITK
+add_definitions(${ITK_DEFINITIONS})
+
+# Buscar OpenCV
+set(OpenCV_DIR "/home/ubuntu/aplicaciones/Librerias/opencv/opencvi/lib/cmake/opencv4")
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS}) # Incluir headers de OpenCV
+
+# Fuentes del proyecto
+set(PROJECT_SOURCES
+    main.cpp
+    mainwindow.cpp
+    mainwindow.h
+    mainwindow.ui
+
+    nifti_loader/nifti_loader.h
+    nifti_loader/nifti_loader.cpp
+    slice_extractor/slice_extractor.h
+    slice_extractor/slice_extractor.cpp
+
+    frontend/welcomepage.cpp
+    frontend/welcomepage.h
+    frontend/slicepage.cpp
+    frontend/slicepage.h
+
+    filters/mainfilter.cpp
+    filters/mainfilter.h
+    filters/filter_thresholding/threshold.cpp
+    filters/filter_thresholding/threshold.h
+)
+
+# Crear el ejecutable
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(VisorNiftiQt
+        MANUAL_FINALIZATION
+        ${PROJECT_SOURCES}
+        filters/filter_suavizado/suavizado.cpp
+        filters/filter_suavizado/suavizado.h
+    )
+else()
+    if(ANDROID)
+        add_library(VisorNiftiQt SHARED
+            ${PROJECT_SOURCES}
+        )
+    else()
+        add_executable(VisorNiftiQt
+            ${PROJECT_SOURCES}
+        )
+    endif()
+endif()
+
+# Agregar rutas de inclusión
+target_include_directories(VisorNiftiQt PRIVATE
+    ${CMAKE_SOURCE_DIR}/filters
+    ${CMAKE_SOURCE_DIR}/nifti_loader
+    ${CMAKE_SOURCE_DIR}/slice_extractor
+    ${CMAKE_SOURCE_DIR}/frontend
+)
+
+# Enlazar Qt, ITK y OpenCV
+target_link_libraries(VisorNiftiQt PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    ${ITK_LIBRARIES}                     # Enlazar todas las librerías de ITK
+    ${OpenCV_LIBS}                       # Enlazar todas las librerías de OpenCV
+)
+
+# Propiedades específicas para macOS/iOS
+if(${QT_VERSION} VERSION_LESS 6.1.0)
+    set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.VisorNiftiQt)
+endif()
+set_target_properties(VisorNiftiQt PROPERTIES
+    ${BUNDLE_ID_OPTION}
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
+
+# Instalación
+include(GNUInstallDirs)
+install(TARGETS VisorNiftiQt
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+# Finalización manual para Qt6
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(VisorNiftiQt)
+endif()

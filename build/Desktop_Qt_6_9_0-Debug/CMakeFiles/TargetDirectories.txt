@@ -1,0 +1,9 @@
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/VisorNiftiQt.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/edit_cache.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/rebuild_cache.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/list_install_components.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/install.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/install/local.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/install/strip.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/VisorNiftiQt_autogen_timestamp_deps.dir
+/home/ubuntu/VisorNiftiQt/build/Desktop_Qt_6_9_0-Debug/CMakeFiles/VisorNiftiQt_autogen.dir
