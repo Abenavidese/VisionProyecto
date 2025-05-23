@@ -12,21 +12,21 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Buscar Qt
+# Buscar Qt (Qt6 o Qt5) y el módulo Widgets
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 # Buscar ITK
-set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0") # Ruta donde está instalado ITK
+set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")  # Ajusta si es necesario
 find_package(ITK REQUIRED)
-include_directories(${ITK_INCLUDE_DIRS})    # Incluir headers de ITK
-link_directories(${ITK_LIBRARY_DIRS})       # Enlazar librerías de ITK
+include_directories(${ITK_INCLUDE_DIRS})
+link_directories(${ITK_LIBRARY_DIRS})
 add_definitions(${ITK_DEFINITIONS})
 
 # Buscar OpenCV
-set(OpenCV_DIR "/home/ubuntu/aplicaciones/Librerias/opencv/opencvi/lib/cmake/opencv4")
+set(OpenCV_DIR "/home/bryam/Música/opencv/build/lib/cmake/opencv4")  # Ajusta a tu ruta
 find_package(OpenCV REQUIRED)
-include_directories(${OpenCV_INCLUDE_DIRS}) # Incluir headers de OpenCV
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Fuentes del proyecto
 set(PROJECT_SOURCES
@@ -49,6 +49,8 @@ set(PROJECT_SOURCES
     filters/mainfilter.h
     filters/filter_thresholding/threshold.cpp
     filters/filter_thresholding/threshold.h
+    filters/filter_suavizado/suavizado.cpp
+    filters/filter_suavizado/suavizado.h
 )
 
 # Crear el ejecutable
@@ -56,8 +58,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        filters/filter_suavizado/suavizado.cpp
-        filters/filter_suavizado/suavizado.h
     )
 else()
     if(ANDROID)
@@ -82,14 +82,15 @@ target_include_directories(VisorNiftiQt PRIVATE
 # Enlazar Qt, ITK y OpenCV
 target_link_libraries(VisorNiftiQt PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
-    ${ITK_LIBRARIES}                     # Enlazar todas las librerías de ITK
-    ${OpenCV_LIBS}                       # Enlazar todas las librerías de OpenCV
+    ${ITK_LIBRARIES}
+    ${OpenCV_LIBS}
 )
 
 # Propiedades específicas para macOS/iOS
 if(${QT_VERSION} VERSION_LESS 6.1.0)
     set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.VisorNiftiQt)
 endif()
+
 set_target_properties(VisorNiftiQt PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}

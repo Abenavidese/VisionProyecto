@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QSlider>
+#include <QCheckBox>
+#include <QPushButton>
 #include <opencv2/opencv.hpp>
 #include <vector>
 
@@ -11,33 +13,45 @@ class SlicePage : public QMainWindow {
     Q_OBJECT
 
 public:
-    explicit SlicePage(const std::vector<cv::Mat>& slices,
-                       const std::vector<cv::Mat>& masks,
-                       QWidget *parent = nullptr);
+    explicit SlicePage(QWidget *parent = nullptr);
     ~SlicePage();
 
+    void setSlicesAndMasks(const std::vector<cv::Mat>& newSlices, const std::vector<cv::Mat>& newMasks);
+
 private slots:
-    void updateSlice(int z); // Actualizar el corte mostrado
-    void toggleMask(bool show); // Mostrar/ocultar máscara
-    void toggleTumorOnly(bool show); // Mostrar solo el tumor
+    void updateSlice(int z);
+    void toggleMask(bool show);
+    void toggleTumorOnly(bool show);
+    void on_loadButton_clicked(); // Slot para botón "Cargar imagen"
 
 private:
-    // Etiquetas para mostrar las imágenes
-    QLabel *originalLabel;   // Imagen original
-    QLabel *overlayLabel;    // Tumor resaltado en rojo
-    QLabel *tumorOnlyLabel;  // Solo tumor
-    QLabel *filteredLabel;   // Resultado del filtro
+    QLabel *originalLabel;
+    QLabel *overlayLabel;
+    QLabel *tumorOnlyLabel;
+    QLabel *filteredLabel;
 
-    QSlider *sliceSlider;    // Control deslizante para navegar entre cortes
-    std::vector<cv::Mat> slices; // Cortes de la imagen
-    std::vector<cv::Mat> masks;  // Máscaras correspondientes
-    int currentZ;            // Índice del corte actual
-    bool showMask;           // Estado del checkbox "Mostrar Máscara"
-    bool showTumorOnly;      // Estado del checkbox "Solo Tumor"
-    bool applyThresholdFilter; // Estado del checkbox "Aplicar Umbralización"
+    QSlider *sliceSlider;
+    QCheckBox *maskCheckBox;
+    QCheckBox *tumorOnlyCheckBox;
+    QCheckBox *thresholdCheckBox;
+    QPushButton *loadButton;
 
-    void displaySlice();     // Mostrar el corte actual en las etiquetas
-    cv::Mat applyThreshold(const cv::Mat& inputImage); // Aplicar filtro de umbralización
+    std::vector<cv::Mat> slices;
+    std::vector<cv::Mat> masks;
+
+    int currentZ;
+    bool showMask;
+    bool showTumorOnly;
+    bool applyThresholdFilter;
+
+    void displaySlice();
+    cv::Mat applyThreshold(const cv::Mat& inputImage);
+
+    void clearImages();        // Limpia etiquetas
+    void enableControls();     // Activa sliders y checkboxes
+    void disableControls();    // Desactiva controles si no hay datos
+
+    bool loadImagesAndMasksInteractive();  // Nueva carga desde QFileDialog
 };
 
 #endif // SLICEPAGE_H
