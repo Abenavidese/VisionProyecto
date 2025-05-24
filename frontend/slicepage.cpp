@@ -17,6 +17,8 @@
 #include "slice_renderer/slice_renderer.h"
 #include "statics_generator/statswindow.h"
 #include "statics_generator/statistics.h"
+#include "filter_contrast/contrast.h"
+
 
 
 SlicePage::SlicePage(QWidget *parent)
@@ -44,11 +46,10 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox = new QComboBox(this);
     filterComboBox->addItem("-- Elegir filtro --");
     filterComboBox->addItem("Umbralización");
-    filterComboBox->addItem("CLAHE");
-    filterComboBox->addItem("Ecualización");
-    filterComboBox->addItem("Gamma");
-    filterComboBox->addItem("Sobel");
+    filterComboBox->addItem("Contrast Stretching");
+
     filterComboBox->setEnabled(false);
+
 
     loadButton = new QPushButton("📂 Cargar imagen", this);
 
@@ -68,18 +69,23 @@ SlicePage::SlicePage(QWidget *parent)
     originalLabel = new QLabel(this);
     originalLabel->setAlignment(Qt::AlignCenter);
     originalLabel->setStyleSheet("border: 1px solid black;");
+    originalLabel->setScaledContents(true);
 
     overlayLabel = new QLabel(this);
     overlayLabel->setAlignment(Qt::AlignCenter);
     overlayLabel->setStyleSheet("border: 1px solid black;");
+    overlayLabel->setScaledContents(true);
 
     tumorOnlyLabel = new QLabel(this);
     tumorOnlyLabel->setAlignment(Qt::AlignCenter);
     tumorOnlyLabel->setStyleSheet("border: 1px solid black;");
+    tumorOnlyLabel->setScaledContents(true);
 
     filteredLabel = new QLabel(this);
     filteredLabel->setAlignment(Qt::AlignCenter);
     filteredLabel->setStyleSheet("border: 1px solid black;");
+    filteredLabel->setScaledContents(true);
+
 
     // Layout principal
     QWidget* centralWidget = new QWidget(this);
@@ -169,10 +175,15 @@ void SlicePage::displaySlice() {
 
     if (selectedFilter == "Umbralización") {
         filteredLabel->setPixmap(QPixmap::fromImage(renderThresholded(img)));
+    } else if (selectedFilter == "Contrast Stretching") {
+        cv::Mat stretched = aplicarContrastStretching(img);
+        QImage out(stretched.data, stretched.cols, stretched.rows, stretched.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
     } else {
         filteredLabel->clear();
     }
 }
+
 
 void SlicePage::clearImages() {
     originalLabel->clear();
@@ -255,17 +266,24 @@ void SlicePage::onFilterStatsButtonClicked() {
     }
 
     QString selectedFilter = filterComboBox->currentText();
-    if (selectedFilter == "Umbralización") {
-        cv::Mat filtered = applyThreshold(slices[currentZ]);
 
-        StatsWindow* filterStatsWindow = new StatsWindow("Estadísticas del Filtro", 800, 600);
-        filterStatsWindow->setAttribute(Qt::WA_DeleteOnClose);  // Se libera al cerrar
-        filterStatsWindow->updateStats(filtered, masks[currentZ]);
-        filterStatsWindow->show();  // Ventana independiente
+    cv::Mat filtered;
+
+    if (selectedFilter == "Umbralización") {
+        filtered = applyThreshold(slices[currentZ]);
+    } else if (selectedFilter == "Contrast Stretching") {
+        filtered = aplicarContrastStretching(slices[currentZ]);
     } else {
         QMessageBox::warning(this, "Advertencia", "Selecciona un filtro válido antes de continuar.");
+        return;
     }
+
+    StatsWindow* filterStatsWindow = new StatsWindow("Estadísticas del Filtro", 800, 600);
+    filterStatsWindow->setAttribute(Qt::WA_DeleteOnClose);  // Se libera al cerrar
+    filterStatsWindow->updateStats(filtered, masks[currentZ]);
+    filterStatsWindow->show();  // Ventana independiente
 }
+
 
 void SlicePage::onSaveTumorClicked() {
     if (masks.empty()) return;

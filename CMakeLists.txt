@@ -62,6 +62,8 @@ set(PROJECT_SOURCES
     output/out_filtro
     output/out_tumor
     output/out_video
+    filters/filter_contrast/contrast.cpp
+    filters/filter_contrast/contrast.h
 )
 
 # Crear ejecutable
@@ -69,6 +71,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+
 
     )
 else()
