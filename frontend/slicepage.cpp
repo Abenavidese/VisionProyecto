@@ -269,34 +269,29 @@ void SlicePage::onSaveTumorClicked() {
     }
 }
 void SlicePage::onSaveFilterClicked() {
-    if (slices.empty()) return;
+    if (!filteredLabel || filteredLabel->pixmap().isNull()) {
+        QMessageBox::warning(this, "Advertencia", "No hay imagen filtrada visible.");
+        return;
+    }
 
-    QString selectedFilter = filterComboBox->currentText();
-    if (selectedFilter == "Umbralización") {
-        cv::Mat filtered = applyThreshold(slices[currentZ]);
-        QImage filteredImg = renderThresholded(filtered);
+    QImage filteredImg = filteredLabel->pixmap().toImage();
 
-        // Subir desde /build/ al directorio raíz del proyecto
-        QDir baseDir(QCoreApplication::applicationDirPath());
-        baseDir.cdUp();  // build/
-        baseDir.cdUp();  // VisorNiftiQt/
+    QDir baseDir(QCoreApplication::applicationDirPath());
+    baseDir.cdUp();  // build/
+    baseDir.cdUp();  // VisorNiftiQt/
 
-        QString outputDir = baseDir.filePath("output/out_filtro");
-        QDir().mkpath(outputDir);
+    QString outputDir = baseDir.filePath("output/out_filtro");
+    QDir().mkpath(outputDir);
 
-        QString path = QString("%1/filtro_z%2_t%3.png")
-                           .arg(outputDir)
-                           .arg(currentZ)
-                           .arg(QDateTime::currentSecsSinceEpoch());
+    QString path = QString("%1/filtro_z%2_t%3.png")
+                       .arg(outputDir)
+                       .arg(currentZ)
+                       .arg(QDateTime::currentSecsSinceEpoch());
 
-        if (filteredImg.save(path)) {
-            qDebug() << "✅ Imagen filtrada guardada en:" << path;
-        } else {
-            QMessageBox::warning(this, "Error", "No se pudo guardar la imagen filtrada.");
-        }
+    if (filteredImg.save(path)) {
+        qDebug() << "✅ Imagen filtrada guardada desde label en:" << path;
     } else {
-        QMessageBox::warning(this, "Atención", "Filtro no soportado todavía.");
+        QMessageBox::warning(this, "Error", "No se pudo guardar la imagen filtrada.");
     }
 }
-
 
