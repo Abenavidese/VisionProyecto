@@ -14,6 +14,8 @@ void plotBoxplot(const cv::Mat& image, QCustomPlot* plotWidget, const cv::Mat& m
 std::map<std::string, double> computeBasicStats(const cv::Mat& image, const cv::Mat& mask = cv::Mat());
 void plotFullStats(const cv::Mat& image, QCustomPlot* plotWidget, const cv::Mat& mask = cv::Mat());
 QImage matToQImage(const cv::Mat& mat);
+cv::Mat matFromQImage(const QImage& img);
+
 
 } // namespace Statistics
 

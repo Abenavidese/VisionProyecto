@@ -225,5 +225,10 @@ QImage matToQImage(const cv::Mat& mat) {
     }
     return QImage();
 }
+cv::Mat matFromQImage(const QImage& qimg) {
+    QImage img = qimg.convertToFormat(QImage::Format_Grayscale8);
+    return cv::Mat(img.height(), img.width(), CV_8UC1, (void*)img.bits(), img.bytesPerLine()).clone();
+}
+
 
 } // namespace Statistics

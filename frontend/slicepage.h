@@ -98,6 +98,10 @@ private:
     void disableControls();       // Deshabilita los controles de usuario
     void onSaveTumorClicked();     // ✅ Agrega esta línea
     void onSaveFilterClicked();    // ✅ Y esta también
+    void analizarCarpeta(const QString& relativePath, const QString& tipo);
+    void analizarCarpetaYMostrarResumen(const QString& relativePath, const QString& tipo);
+
+
     bool loadImagesAndMasksInteractive(); // Carga imágenes y máscaras interactivamente
 };
 

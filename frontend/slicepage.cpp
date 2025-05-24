@@ -7,12 +7,17 @@
 #include <QPixmap>
 #include <QDebug>
 #include <QDir>
+#include <numeric>
 #include <QCoreApplication>
 #include <opencv2/opencv.hpp>
+#include <QDirIterator>
+#include <QImageReader>
 #include "filter_thresholding/threshold.h"
 #include "nifti_utils/nifti_utils.h"
 #include "slice_renderer/slice_renderer.h"
 #include "statics_generator/statswindow.h"
+#include "statics_generator/statistics.h"
+
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -55,6 +60,10 @@ SlicePage::SlicePage(QWidget *parent)
     QPushButton* saveFilterButton = new QPushButton("💾 Guardar Filtro", this);
 
 
+    QPushButton* analizarTumorButton = new QPushButton("📂 Analizar carpeta Tumor", this);
+    QPushButton* analizarFiltroButton = new QPushButton("📂 Analizar carpeta Filtro", this);
+
+
     // Labels para mostrar imágenes
     originalLabel = new QLabel(this);
     originalLabel->setAlignment(Qt::AlignCenter);
@@ -94,6 +103,8 @@ SlicePage::SlicePage(QWidget *parent)
     controlsLayout->addWidget(filterStatsButton); // Agregar botón de estadísticas del filtro
     controlsLayout->addWidget(saveTumorButton);
     controlsLayout->addWidget(saveFilterButton);
+    controlsLayout->addWidget(analizarTumorButton);
+    controlsLayout->addWidget(analizarFiltroButton);
 
     mainLayout->addLayout(controlsLayout);
 
@@ -112,6 +123,15 @@ SlicePage::SlicePage(QWidget *parent)
     connect(filterStatsButton, &QPushButton::clicked, this, &SlicePage::onFilterStatsButtonClicked);
     connect(saveTumorButton, &QPushButton::clicked, this, &SlicePage::onSaveTumorClicked);
     connect(saveFilterButton, &QPushButton::clicked, this, &SlicePage::onSaveFilterClicked);
+
+    connect(analizarTumorButton, &QPushButton::clicked, this, [this]() {
+        analizarCarpeta("output/out_tumor", "tumor");
+    });
+
+    connect(analizarFiltroButton, &QPushButton::clicked, this, [this]() {
+        analizarCarpeta("output/out_filtro", "filtro");
+    });
+
 
 }
 
@@ -292,6 +312,39 @@ void SlicePage::onSaveFilterClicked() {
         qDebug() << "✅ Imagen filtrada guardada desde label en:" << path;
     } else {
         QMessageBox::warning(this, "Error", "No se pudo guardar la imagen filtrada.");
+    }
+}
+
+
+
+void SlicePage::analizarCarpeta(const QString& relativePath, const QString& tipo) {
+    // Acceder a la ruta del proyecto
+    QDir baseDir(QCoreApplication::applicationDirPath());
+    baseDir.cdUp();
+    baseDir.cdUp();
+    QString carpetaCompleta = baseDir.filePath(relativePath);
+
+    if (!QDir(carpetaCompleta).exists()) {
+        QMessageBox::warning(this, "Carpeta no encontrada", "No existe la carpeta: " + carpetaCompleta);
+        return;
+    }
+
+    QDirIterator it(carpetaCompleta, QStringList() << "*.png" << "*.jpg", QDir::Files);
+    while (it.hasNext()) {
+        QString imagePath = it.next();
+
+        QImage qimg(imagePath);
+        if (qimg.isNull()) continue;
+
+        // Convertir a Mat para compatibilidad
+        cv::Mat img = Statistics::matFromQImage(qimg);
+
+        // Mostrar ventana de estadísticas
+        QString titulo = QString("Estadísticas - %1").arg(QFileInfo(imagePath).fileName());
+        StatsWindow* w = new StatsWindow(titulo, 800, 600);
+        w->setAttribute(Qt::WA_DeleteOnClose);
+        w->updateStats(img);  // sin máscara
+        w->show();
     }
 }
 
