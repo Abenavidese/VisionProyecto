@@ -1,34 +1,30 @@
 cmake_minimum_required(VERSION 3.16)
 
-# Nombre del proyecto
 project(VisorNiftiQt VERSION 0.1 LANGUAGES CXX)
 
-# Configuraciones automáticas para Qt
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-
-# Estándar de C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Buscar Qt (Qt6 o Qt5) y el módulo Widgets
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+# Buscar Qt (Qt6 o Qt5) y los módulos Widgets y PrintSupport
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets PrintSupport)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets PrintSupport)
 
-# Buscar ITK
-set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")  # Ruta ajustada si es necesario
+# ITK
+set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")
 find_package(ITK REQUIRED)
 include_directories(${ITK_INCLUDE_DIRS})
 link_directories(${ITK_LIBRARY_DIRS})
 add_definitions(${ITK_DEFINITIONS})
 
-# Buscar OpenCV con tu ruta
+# OpenCV
 set(OpenCV_DIR "/home/ubuntu/aplicaciones/Librerias/opencv/opencvi/lib/cmake/opencv4")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-# Fuentes del proyecto
+# Fuentes
 set(PROJECT_SOURCES
     main.cpp
     mainwindow.cpp
@@ -55,30 +51,32 @@ set(PROJECT_SOURCES
     utils/nifti_utils/nifti_utils.h
     utils/slice_renderer/slice_renderer.cpp
     utils/slice_renderer/slice_renderer.h
+    utils/statics_generator/qcustomplot.cpp
+    utils/statics_generator/qcustomplot.h
+    utils/utils_main.cpp
+    utils/utils_main.h
+    utils/statics_generator/statistics.cpp
+    utils/statics_generator/statistics.h
+    utils/statics_generator/statswindow.cpp
+    utils/statics_generator/statswindow.h
 )
 
-# Crear el ejecutable
+# Crear ejecutable
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        utils/utils_main.cpp
-        utils/utils_main.h
 
     )
 else()
     if(ANDROID)
-        add_library(VisorNiftiQt SHARED
-            ${PROJECT_SOURCES}
-        )
+        add_library(VisorNiftiQt SHARED ${PROJECT_SOURCES})
     else()
-        add_executable(VisorNiftiQt
-            ${PROJECT_SOURCES}
-        )
+        add_executable(VisorNiftiQt ${PROJECT_SOURCES})
     endif()
 endif()
 
-# Agregar rutas de inclusión
+# Incluir directorios
 target_include_directories(VisorNiftiQt PRIVATE
     ${CMAKE_SOURCE_DIR}/filters
     ${CMAKE_SOURCE_DIR}/nifti_loader
@@ -87,14 +85,15 @@ target_include_directories(VisorNiftiQt PRIVATE
     ${CMAKE_SOURCE_DIR}/utils
 )
 
-# Enlazar Qt, ITK y OpenCV
+# Enlazar librerías
 target_link_libraries(VisorNiftiQt PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::PrintSupport
     ${ITK_LIBRARIES}
     ${OpenCV_LIBS}
 )
 
-# Propiedades específicas para macOS/iOS
+# macOS/iOS propiedades
 if(${QT_VERSION} VERSION_LESS 6.1.0)
     set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.VisorNiftiQt)
 endif()
@@ -113,9 +112,10 @@ install(TARGETS VisorNiftiQt
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+
 )
 
-# Finalización manual para Qt6
+# Finalizar ejecutable en Qt6
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(VisorNiftiQt)
 endif()
