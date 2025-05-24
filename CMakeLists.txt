@@ -17,14 +17,14 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 # Buscar ITK
-set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")  # Ajusta si es necesario
+set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")  # Ruta ajustada si es necesario
 find_package(ITK REQUIRED)
 include_directories(${ITK_INCLUDE_DIRS})
 link_directories(${ITK_LIBRARY_DIRS})
 add_definitions(${ITK_DEFINITIONS})
 
-# Buscar OpenCV
-set(OpenCV_DIR "/home/bryam/Música/opencv/build/lib/cmake/opencv4")  # Ajusta a tu ruta
+# Buscar OpenCV con tu ruta
+set(OpenCV_DIR "/home/ubuntu/aplicaciones/Librerias/opencv/opencvi/lib/cmake/opencv4")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
@@ -51,6 +51,10 @@ set(PROJECT_SOURCES
     filters/filter_thresholding/threshold.h
     filters/filter_suavizado/suavizado.cpp
     filters/filter_suavizado/suavizado.h
+    utils/nifti_utils/nifti_utils.cpp
+    utils/nifti_utils/nifti_utils.h
+    utils/slice_renderer/slice_renderer.cpp
+    utils/slice_renderer/slice_renderer.h
 )
 
 # Crear el ejecutable
@@ -58,6 +62,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        utils/utils_main.cpp
+        utils/utils_main.h
+
     )
 else()
     if(ANDROID)
@@ -77,6 +84,7 @@ target_include_directories(VisorNiftiQt PRIVATE
     ${CMAKE_SOURCE_DIR}/nifti_loader
     ${CMAKE_SOURCE_DIR}/slice_extractor
     ${CMAKE_SOURCE_DIR}/frontend
+    ${CMAKE_SOURCE_DIR}/utils
 )
 
 # Enlazar Qt, ITK y OpenCV

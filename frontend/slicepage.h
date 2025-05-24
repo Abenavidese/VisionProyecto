@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include "filter_thresholding/threshold.h"
 
 class SlicePage : public QMainWindow {
     Q_OBJECT
@@ -45,7 +46,6 @@ private:
     bool applyThresholdFilter;
 
     void displaySlice();
-    cv::Mat applyThreshold(const cv::Mat& inputImage);
 
     void clearImages();        // Limpia etiquetas
     void enableControls();     // Activa sliders y checkboxes

@@ -6,14 +6,11 @@
 #include <QImage>
 #include <QPixmap>
 #include <QDebug>
-#include <itkImage.h>
-#include <itkImageFileReader.h>
-#include <itkExtractImageFilter.h>
-#include <itkRescaleIntensityImageFilter.h>
 #include <opencv2/opencv.hpp>
 
-using ImageType3D = itk::Image<unsigned char, 3>;
-using ImageType2D = itk::Image<unsigned char, 2>;
+#include "filter_thresholding/threshold.h"
+#include "nifti_utils/nifti_utils.h"
+#include "slice_renderer/slice_renderer.h"
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -25,7 +22,6 @@ SlicePage::SlicePage(QWidget *parent)
     setWindowTitle("Visor de Resonancia");
     resize(1200, 800);
 
-    // Crear widgets
     sliceSlider = new QSlider(Qt::Horizontal, this);
     sliceSlider->setEnabled(false);
 
@@ -59,7 +55,6 @@ SlicePage::SlicePage(QWidget *parent)
     filteredLabel->setAlignment(Qt::AlignCenter);
     filteredLabel->setStyleSheet("border: 1px solid black;");
 
-    // Layouts
     QWidget *centralWidget = new QWidget(this);
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
@@ -81,7 +76,6 @@ SlicePage::SlicePage(QWidget *parent)
 
     setCentralWidget(centralWidget);
 
-    // Conexiones
     connect(sliceSlider, &QSlider::valueChanged, this, &SlicePage::updateSlice);
     connect(maskCheckBox, &QCheckBox::toggled, this, &SlicePage::toggleMask);
     connect(tumorOnlyCheckBox, &QCheckBox::toggled, this, &SlicePage::toggleTumorOnly);
@@ -115,55 +109,17 @@ void SlicePage::displaySlice() {
         return;
     }
 
-    cv::Mat img = slices[currentZ];
-    cv::Mat maskSlice = masks[currentZ];
+    const cv::Mat& img = slices[currentZ];
+    const cv::Mat& mask = masks[currentZ];
 
-    // Imagen original
-    cv::Mat resizedImg;
-    cv::resize(img, resizedImg, cv::Size(300,300));
-    QImage qOriginal(resizedImg.data, resizedImg.cols, resizedImg.rows, resizedImg.step, QImage::Format_Grayscale8);
-    originalLabel->setPixmap(QPixmap::fromImage(qOriginal));
+    originalLabel->setPixmap(QPixmap::fromImage(renderOriginal(img)));
+    overlayLabel->setPixmap(QPixmap::fromImage(renderOverlay(img, mask, showMask)));
+    tumorOnlyLabel->setPixmap(QPixmap::fromImage(renderTumorOnly(mask, showTumorOnly)));
 
-    // Overlay
-    cv::Mat overlay;
-    cv::cvtColor(img, overlay, cv::COLOR_GRAY2BGR);
-    if (showMask) {
-        for (int y=0; y < maskSlice.rows; ++y)
-            for (int x=0; x < maskSlice.cols; ++x)
-                if (maskSlice.at<uchar>(y,x) > 0)
-                    overlay.at<cv::Vec3b>(y,x) = {0,0,255};
-    }
-    cv::resize(overlay, overlay, cv::Size(300,300));
-    QImage qOverlay(overlay.data, overlay.cols, overlay.rows, overlay.step, QImage::Format_RGB888);
-    overlayLabel->setPixmap(QPixmap::fromImage(qOverlay));
-
-    // Solo tumor
-    cv::Mat tumorOnly = cv::Mat(maskSlice.size(), CV_8UC3, cv::Scalar(0,0,0));
-    if (showTumorOnly) {
-        for (int y=0; y < maskSlice.rows; ++y)
-            for (int x=0; x < maskSlice.cols; ++x)
-                if (maskSlice.at<uchar>(y,x) > 0)
-                    tumorOnly.at<cv::Vec3b>(y,x) = {255,255,255};
-    }
-    cv::resize(tumorOnly, tumorOnly, cv::Size(300,300));
-    QImage qTumorOnly(tumorOnly.data, tumorOnly.cols, tumorOnly.rows, tumorOnly.step, QImage::Format_RGB888);
-    tumorOnlyLabel->setPixmap(QPixmap::fromImage(qTumorOnly));
-
-    // Umbral
-    if (applyThresholdFilter) {
-        cv::Mat filtered = applyThreshold(img);
-        cv::resize(filtered, filtered, cv::Size(300,300));
-        QImage qFiltered(filtered.data, filtered.cols, filtered.rows, filtered.step, QImage::Format_Grayscale8);
-        filteredLabel->setPixmap(QPixmap::fromImage(qFiltered));
-    } else {
+    if (applyThresholdFilter)
+        filteredLabel->setPixmap(QPixmap::fromImage(renderThresholded(img)));
+    else
         filteredLabel->clear();
-    }
-}
-
-cv::Mat SlicePage::applyThreshold(const cv::Mat& inputImage) {
-    cv::Mat outputImage;
-    cv::threshold(inputImage, outputImage, 128, 255, cv::THRESH_BINARY);
-    return outputImage;
 }
 
 void SlicePage::clearImages() {
@@ -188,8 +144,8 @@ void SlicePage::disableControls() {
 }
 
 void SlicePage::setSlicesAndMasks(const std::vector<cv::Mat>& newSlices, const std::vector<cv::Mat>& newMasks) {
-    this->slices = newSlices;
-    this->masks = newMasks;
+    slices = newSlices;
+    masks = newMasks;
     if (!slices.empty()) {
         sliceSlider->setRange(0, slices.size() - 1);
         sliceSlider->setValue(0);
@@ -217,51 +173,10 @@ bool SlicePage::loadImagesAndMasksInteractive() {
     if (maskPath.isEmpty()) return false;
 
     try {
-        auto loadNiftiToCvSlices = [](const QString& path) -> std::vector<cv::Mat> {
-            using ReaderType = itk::ImageFileReader<ImageType3D>;
-            ReaderType::Pointer reader = ReaderType::New();
-            reader->SetFileName(path.toStdString());
-            reader->Update();
-            ImageType3D::Pointer image = reader->GetOutput();
-
-            std::vector<cv::Mat> output;
-            ImageType3D::RegionType region = image->GetLargestPossibleRegion();
-            int depth = region.GetSize()[2];
-
-            for (int z = 0; z < depth; ++z) {
-                ImageType3D::IndexType start = {0, 0, z};
-                ImageType3D::SizeType size = {region.GetSize()[0], region.GetSize()[1], 0};
-                ImageType3D::RegionType sliceRegion(start, size);
-
-                using ExtractFilterType = itk::ExtractImageFilter<ImageType3D, ImageType2D>;
-                ExtractFilterType::Pointer extractor = ExtractFilterType::New();
-                extractor->SetExtractionRegion(sliceRegion);
-                extractor->SetInput(image);
-                extractor->SetDirectionCollapseToIdentity();
-                extractor->Update();
-
-                using RescaleType = itk::RescaleIntensityImageFilter<ImageType2D, ImageType2D>;
-                RescaleType::Pointer rescaler = RescaleType::New();
-                rescaler->SetInput(extractor->GetOutput());
-                rescaler->SetOutputMinimum(0);
-                rescaler->SetOutputMaximum(255);
-                rescaler->Update();
-
-                ImageType2D::Pointer slice = rescaler->GetOutput();
-                cv::Mat cvSlice(slice->GetLargestPossibleRegion().GetSize()[1],
-                                slice->GetLargestPossibleRegion().GetSize()[0],
-                                CV_8UC1,
-                                (void*)slice->GetBufferPointer());
-                output.push_back(cv::Mat(cvSlice).clone());
-            }
-            return output;
-        };
-
         std::vector<cv::Mat> loadedSlices = loadNiftiToCvSlices(imagePath);
         std::vector<cv::Mat> loadedMasks = loadNiftiToCvSlices(maskPath);
         setSlicesAndMasks(loadedSlices, loadedMasks);
         return true;
-
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Error", QString("No se pudieron cargar las imágenes: ") + e.what());
         return false;
