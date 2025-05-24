@@ -59,6 +59,9 @@ set(PROJECT_SOURCES
     utils/statics_generator/statistics.h
     utils/statics_generator/statswindow.cpp
     utils/statics_generator/statswindow.h
+    output/out_filtro
+    output/out_tumor
+    output/out_video
 )
 
 # Crear ejecutable

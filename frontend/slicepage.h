@@ -96,6 +96,8 @@ private:
     void clearImages();           // Limpia las imágenes mostradas
     void enableControls();        // Habilita los controles de usuario
     void disableControls();       // Deshabilita los controles de usuario
+    void onSaveTumorClicked();     // ✅ Agrega esta línea
+    void onSaveFilterClicked();    // ✅ Y esta también
     bool loadImagesAndMasksInteractive(); // Carga imágenes y máscaras interactivamente
 };
 

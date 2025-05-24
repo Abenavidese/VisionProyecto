@@ -19,3 +19,15 @@ CMakeLists.txt.user
 # Ignorar archivos del sistema operativo
 .DS_Store
 Thumbs.db
+
+# Ignorar contenido de salida excepto la imagen de demo
+
+# Tumores
+output/out_tumor/*
+!output/out_tumor/tumor_z87.png
+# Filtros
+output/out_filtro/*
+!output/out_filtro/filtro_z79_t1748103757.png
+# Videos
+output/out_video/*
+!output/out_video/demo_frame.png

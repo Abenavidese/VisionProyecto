@@ -6,6 +6,8 @@
 #include <QImage>
 #include <QPixmap>
 #include <QDebug>
+#include <QDir>
+#include <QCoreApplication>
 #include <opencv2/opencv.hpp>
 #include "filter_thresholding/threshold.h"
 #include "nifti_utils/nifti_utils.h"
@@ -49,6 +51,10 @@ SlicePage::SlicePage(QWidget *parent)
     QPushButton* tumorStatsButton = new QPushButton("📊 Estadísticas del Tumor", this);
     QPushButton* filterStatsButton = new QPushButton("📊 Estadísticas del Filtro", this);
 
+    QPushButton* saveTumorButton = new QPushButton("💾 Guardar Tumor", this);
+    QPushButton* saveFilterButton = new QPushButton("💾 Guardar Filtro", this);
+
+
     // Labels para mostrar imágenes
     originalLabel = new QLabel(this);
     originalLabel->setAlignment(Qt::AlignCenter);
@@ -86,6 +92,9 @@ SlicePage::SlicePage(QWidget *parent)
     controlsLayout->addWidget(loadButton);
     controlsLayout->addWidget(tumorStatsButton); // Agregar botón de estadísticas del tumor
     controlsLayout->addWidget(filterStatsButton); // Agregar botón de estadísticas del filtro
+    controlsLayout->addWidget(saveTumorButton);
+    controlsLayout->addWidget(saveFilterButton);
+
     mainLayout->addLayout(controlsLayout);
 
     setCentralWidget(centralWidget);
@@ -101,6 +110,9 @@ SlicePage::SlicePage(QWidget *parent)
     connect(loadButton, &QPushButton::clicked, this, &SlicePage::on_loadButton_clicked);
     connect(tumorStatsButton, &QPushButton::clicked, this, &SlicePage::onTumorStatsButtonClicked);
     connect(filterStatsButton, &QPushButton::clicked, this, &SlicePage::onFilterStatsButtonClicked);
+    connect(saveTumorButton, &QPushButton::clicked, this, &SlicePage::onSaveTumorClicked);
+    connect(saveFilterButton, &QPushButton::clicked, this, &SlicePage::onSaveFilterClicked);
+
 }
 
 SlicePage::~SlicePage() {}
@@ -232,6 +244,58 @@ void SlicePage::onFilterStatsButtonClicked() {
         filterStatsWindow->show();  // Ventana independiente
     } else {
         QMessageBox::warning(this, "Advertencia", "Selecciona un filtro válido antes de continuar.");
+    }
+}
+
+void SlicePage::onSaveTumorClicked() {
+    if (masks.empty()) return;
+
+    QImage tumorImg = renderTumorOnly(masks[currentZ], true);
+
+    // Subir desde /build/Desktop_Qt_*/ al directorio raíz del proyecto
+    QDir baseDir(QCoreApplication::applicationDirPath());
+    baseDir.cdUp();  // build/
+    baseDir.cdUp();  // VisorNiftiQt/
+
+    QString outputDir = baseDir.filePath("output/out_tumor");
+    QDir().mkpath(outputDir);
+
+    QString path = QString("%1/tumor_z%2.png").arg(outputDir).arg(currentZ);
+
+    if (tumorImg.save(path)) {
+        qDebug() << "✅ Imagen de tumor guardada en:" << path;
+    } else {
+        QMessageBox::warning(this, "Error", "No se pudo guardar la imagen del tumor.");
+    }
+}
+void SlicePage::onSaveFilterClicked() {
+    if (slices.empty()) return;
+
+    QString selectedFilter = filterComboBox->currentText();
+    if (selectedFilter == "Umbralización") {
+        cv::Mat filtered = applyThreshold(slices[currentZ]);
+        QImage filteredImg = renderThresholded(filtered);
+
+        // Subir desde /build/ al directorio raíz del proyecto
+        QDir baseDir(QCoreApplication::applicationDirPath());
+        baseDir.cdUp();  // build/
+        baseDir.cdUp();  // VisorNiftiQt/
+
+        QString outputDir = baseDir.filePath("output/out_filtro");
+        QDir().mkpath(outputDir);
+
+        QString path = QString("%1/filtro_z%2_t%3.png")
+                           .arg(outputDir)
+                           .arg(currentZ)
+                           .arg(QDateTime::currentSecsSinceEpoch());
+
+        if (filteredImg.save(path)) {
+            qDebug() << "✅ Imagen filtrada guardada en:" << path;
+        } else {
+            QMessageBox::warning(this, "Error", "No se pudo guardar la imagen filtrada.");
+        }
+    } else {
+        QMessageBox::warning(this, "Atención", "Filtro no soportado todavía.");
     }
 }
 
