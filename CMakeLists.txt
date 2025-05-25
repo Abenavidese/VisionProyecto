@@ -63,6 +63,9 @@ set(PROJECT_SOURCES
     filters/filter_contrast/contrast.h
     filters/filter_bordes/bordes.cpp
     filters/filter_bordes/bordes.h
+    filters/filter_color_thresh/color_thresh.cpp
+    filters/filter_color_thresh/color_thresh.h
+
 
 )
 
@@ -71,6 +74,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        filters/filter_color_thresh/color_thresh.h filters/filter_color_thresh/color_thresh.cpp
 
     )
 else()

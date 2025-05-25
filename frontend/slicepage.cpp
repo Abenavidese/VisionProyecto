@@ -19,7 +19,7 @@
 #include "statics_generator/statistics.h"
 #include "filter_contrast/contrast.h"
 #include "filter_bordes/bordes.h"
-
+#include "filter_color_thresh/color_thresh.h"
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -55,6 +55,8 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox->addItem("Umbralización");
     filterComboBox->addItem("Contrast Stretching");
     filterComboBox->addItem("Detección de Bordes");
+    filterComboBox->addItem("Binarización por Color");
+
 
 
     filterComboBox->setEnabled(false);
@@ -193,8 +195,14 @@ void SlicePage::displaySlice() {
         cv::Mat bordes = aplicarDeteccionBordes(img);
         QImage out(bordes.data, bordes.cols, bordes.rows, bordes.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+        }
+    else if (selectedFilter == "Binarización por Color") {
+        cv::Mat binarizada = aplicarColorThreshold(img, 100, 200);  // puedes hacer estos valores dinámicos luego
+        QImage out(binarizada.data, binarizada.cols, binarizada.rows, binarizada.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+        }
 
-    }
+
     else {
         filteredLabel->clear();
     }
@@ -291,7 +299,13 @@ void SlicePage::onGenerarVideoClicked() {
                 filtered = aplicarContrastStretching(slices[i]);
             } else if (selectedFilter == "Detección de Bordes") {
                 filtered = aplicarDeteccionBordes(slices[i]);
-            } else {
+            }
+             else if (selectedFilter == "Binarización por Color") {
+                filtered = aplicarColorThreshold(slices[i]);
+            }
+
+
+            else {
                 continue;  // Ignorar filtros no implementados aún
             }
 
@@ -395,7 +409,12 @@ void SlicePage::onFilterStatsButtonClicked() {
     } else if (selectedFilter == "Detección de Bordes") {
         filtered = aplicarDeteccionBordes(slices[currentZ]);
 
-    } else {
+    }
+      else if (selectedFilter == "Binarización por Color") {
+        filtered = aplicarColorThreshold(slices[currentZ]);
+    }
+
+    else {
         QMessageBox::warning(this, "Advertencia", "Selecciona un filtro válido antes de continuar.");
         return;
     }
