@@ -31,6 +31,13 @@ SlicePage::SlicePage(QWidget *parent)
     setWindowTitle("Visor de Resonancia");
     resize(1200, 800);
 
+
+    // Menú: Otras funciones
+    QMenu* menuFunciones = menuBar()->addMenu("Otras funciones");
+    QAction* actionGenerarVideo = new QAction("🎥 Generar video", this);
+    menuFunciones->addAction(actionGenerarVideo);
+    connect(actionGenerarVideo, &QAction::triggered, this, &SlicePage::onGenerarVideoClicked);
+
     // Controles de usuario
     sliceSlider = new QSlider(Qt::Horizontal, this);
     sliceSlider->setEnabled(false);
@@ -205,6 +212,49 @@ void SlicePage::disableControls() {
     tumorOnlyCheckBox->setEnabled(false);
     filterComboBox->setEnabled(false);
 }
+
+void SlicePage::onGenerarVideoClicked() {
+    if (slices.empty()) {
+        QMessageBox::warning(this, "Advertencia", "No hay cortes cargados para generar video.");
+        return;
+    }
+
+    // Asegurar directorio de salida
+    QDir baseDir(QCoreApplication::applicationDirPath());
+    baseDir.cdUp();  // build/
+    baseDir.cdUp();  // VisorNiftiQt/
+    QString outputDir = baseDir.filePath("output/out_video");
+    QDir().mkpath(outputDir);
+    QString videoPath = outputDir + "/stack.avi";
+
+    // Obtener tamaño base
+    cv::Size frameSize(300, 300);
+    int fps = 10;
+
+    // Crear video
+    cv::VideoWriter writer(videoPath.toStdString(),
+                           cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+                           fps,
+                           frameSize,
+                           true);  // 3 canales (color)
+
+    if (!writer.isOpened()) {
+        QMessageBox::critical(this, "Error", "No se pudo crear el archivo de video.");
+        return;
+    }
+
+    for (const auto& slice : slices) {
+        cv::Mat resized, color;
+        cv::resize(slice, resized, frameSize);
+        cv::cvtColor(resized, color, cv::COLOR_GRAY2BGR);  // Convertir a 3 canales
+        writer.write(color);
+    }
+
+    writer.release();
+
+    QMessageBox::information(this, "Video generado", "✅ Video guardado en:\n" + videoPath);
+}
+
 
 void SlicePage::setSlicesAndMasks(const std::vector<cv::Mat>& newSlices, const std::vector<cv::Mat>& newMasks) {
     slices = newSlices;

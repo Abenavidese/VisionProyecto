@@ -101,6 +101,7 @@ private:
     void analizarCarpeta(const QString& relativePath, const QString& tipo);
     void analizarCarpetaYMostrarResumen(const QString& relativePath, const QString& tipo);
 
+    void onGenerarVideoClicked();   // ✅ ← AGREGA ESTA LÍNEA
 
     bool loadImagesAndMasksInteractive(); // Carga imágenes y máscaras interactivamente
 };

@@ -10,6 +10,9 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     welcomePage = new WelcomePage(this);
+    QDir().mkpath("output/out_filtro");
+    QDir().mkpath("output/out_tumor");
+    QDir().mkpath("output/out_video");
 
     connect(welcomePage, &WelcomePage::nextClicked, this, [this]() {
         welcomePage->close();

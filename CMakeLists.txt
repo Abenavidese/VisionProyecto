@@ -13,15 +13,15 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets PrintSupport)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets PrintSupport)
 
 # ITK
-set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")
+set(ITK_DIR "usr/local/lib/cmake/ITK-6.0")
 find_package(ITK REQUIRED)
 include_directories(${ITK_INCLUDE_DIRS})
 link_directories(${ITK_LIBRARY_DIRS})
 add_definitions(${ITK_DEFINITIONS})
 
 # OpenCV
-set(OpenCV_DIR "/home/ubuntu/aplicaciones/Librerias/opencv/opencvi/lib/cmake/opencv4")
-find_package(OpenCV REQUIRED)
+set(OpenCV_DIR "/home/bryam/Música/opencv/build/lib/cmake/opencv4")
+find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui videoio)  # ✅ AÑADIDO videoio
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Fuentes
@@ -59,9 +59,6 @@ set(PROJECT_SOURCES
     utils/statics_generator/statistics.h
     utils/statics_generator/statswindow.cpp
     utils/statics_generator/statswindow.h
-    output/out_filtro
-    output/out_tumor
-    output/out_video
     filters/filter_contrast/contrast.cpp
     filters/filter_contrast/contrast.h
 )
@@ -71,8 +68,6 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-
-
     )
 else()
     if(ANDROID)
@@ -118,7 +113,6 @@ install(TARGETS VisorNiftiQt
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-
 )
 
 # Finalizar ejecutable en Qt6
