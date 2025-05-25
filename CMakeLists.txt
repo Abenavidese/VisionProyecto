@@ -65,6 +65,8 @@ set(PROJECT_SOURCES
     filters/filter_bordes/bordes.h
     filters/filter_color_thresh/color_thresh.cpp
     filters/filter_color_thresh/color_thresh.h
+    filters/filter_pixel_ops/pixel_ops.cpp
+    filters/filter_pixel_ops/pixel_ops.h
 
 
 )
@@ -75,6 +77,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         filters/filter_color_thresh/color_thresh.h filters/filter_color_thresh/color_thresh.cpp
+        filters/filter_pixel_ops/pixel_ops.h filters/filter_pixel_ops/pixel_ops.cpp
 
     )
 else()

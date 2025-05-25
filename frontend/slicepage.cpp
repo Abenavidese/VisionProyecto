@@ -20,6 +20,7 @@
 #include "filter_contrast/contrast.h"
 #include "filter_bordes/bordes.h"
 #include "filter_color_thresh/color_thresh.h"
+#include "filter_pixel_ops/pixel_ops.h"
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -56,6 +57,7 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox->addItem("Contrast Stretching");
     filterComboBox->addItem("Detección de Bordes");
     filterComboBox->addItem("Binarización por Color");
+    filterComboBox->addItem("Inversión de Intensidad");
 
 
 
@@ -201,7 +203,11 @@ void SlicePage::displaySlice() {
         QImage out(binarizada.data, binarizada.cols, binarizada.rows, binarizada.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
         }
-
+    else if (selectedFilter == "Inversión de Intensidad") {
+        cv::Mat invertida = aplicarInversion(img);
+        QImage out(invertida.data, invertida.cols, invertida.rows, invertida.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+        }
 
     else {
         filteredLabel->clear();
@@ -302,6 +308,12 @@ void SlicePage::onGenerarVideoClicked() {
             }
              else if (selectedFilter == "Binarización por Color") {
                 filtered = aplicarColorThreshold(slices[i]);
+            }
+            else if (selectedFilter == "Inversión de Intensidad") {
+                filtered = aplicarInversion(slices[i]);
+            }
+            else if (selectedFilter == "Inversión de Intensidad") {
+                filtered = aplicarInversion(slices[currentZ]);
             }
 
 
