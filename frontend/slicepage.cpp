@@ -18,7 +18,7 @@
 #include "statics_generator/statswindow.h"
 #include "statics_generator/statistics.h"
 #include "filter_contrast/contrast.h"
-
+#include "filter_bordes/bordes.h"
 
 
 SlicePage::SlicePage(QWidget *parent)
@@ -54,6 +54,8 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox->addItem("-- Elegir filtro --");
     filterComboBox->addItem("Umbralización");
     filterComboBox->addItem("Contrast Stretching");
+    filterComboBox->addItem("Detección de Bordes");
+
 
     filterComboBox->setEnabled(false);
 
@@ -186,7 +188,14 @@ void SlicePage::displaySlice() {
         cv::Mat stretched = aplicarContrastStretching(img);
         QImage out(stretched.data, stretched.cols, stretched.rows, stretched.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-    } else {
+        }
+     else if (selectedFilter == "Detección de Bordes") {
+        cv::Mat bordes = aplicarDeteccionBordes(img);
+        QImage out(bordes.data, bordes.cols, bordes.rows, bordes.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+
+    }
+    else {
         filteredLabel->clear();
     }
 }
@@ -242,47 +251,60 @@ void SlicePage::onGenerarVideoClicked() {
                                   fps, frameSize, true);
 
     cv::VideoWriter writerFiltered;
-    bool applyFilter = false;
+    bool writerFilteredReady = false;
+
     QString selectedFilter = filterComboBox->currentText();
+    bool filterSelected = (selectedFilter != "-- Elegir filtro --");
 
-    if (selectedFilter == "Umbralización" || selectedFilter == "Contrast Stretching") {
-        writerFiltered.open(pathFiltered.toStdString(),
-                            cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
-                            fps, frameSize, true);
-        applyFilter = true;
-    }
-
-    if (!writerOriginal.isOpened() || !writerOverlay.isOpened() || (applyFilter && !writerFiltered.isOpened())) {
-        QMessageBox::critical(this, "Error", "No se pudo crear uno o más archivos de video.");
+    if (!writerOriginal.isOpened() || !writerOverlay.isOpened()) {
+        QMessageBox::critical(this, "Error", "No se pudo crear los archivos de video originales.");
         return;
     }
 
     for (size_t i = 0; i < slices.size(); ++i) {
-        // Original en color (grises convertidos a BGR)
+        // Imagen original
         cv::Mat imgGray, imgBGR;
         cv::resize(slices[i], imgGray, frameSize);
         cv::cvtColor(imgGray, imgBGR, cv::COLOR_GRAY2BGR);
         writerOriginal.write(imgBGR);
 
-        // Overlay: máscara en rojo sobre la imagen
+        // Overlay con máscara
         cv::Mat overlay;
         cv::cvtColor(imgGray, overlay, cv::COLOR_GRAY2BGR);
         for (int y = 0; y < overlay.rows; ++y) {
             for (int x = 0; x < overlay.cols; ++x) {
-                if (masks[i].at<uchar>(y * masks[i].rows / overlay.rows, x * masks[i].cols / overlay.cols) > 0) {
-                    overlay.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255); // rojo
+                if (masks[i].at<uchar>(y * masks[i].rows / overlay.rows,
+                                       x * masks[i].cols / overlay.cols) > 0) {
+                    overlay.at<cv::Vec3b>(y, x) = {0, 0, 255};
                 }
             }
         }
         writerOverlay.write(overlay);
 
-        // Filtro actual
-        if (applyFilter) {
+        // Filtro seleccionado
+        if (filterSelected) {
             cv::Mat filtered;
+
             if (selectedFilter == "Umbralización") {
                 filtered = applyThreshold(slices[i]);
             } else if (selectedFilter == "Contrast Stretching") {
                 filtered = aplicarContrastStretching(slices[i]);
+            } else if (selectedFilter == "Detección de Bordes") {
+                filtered = aplicarDeteccionBordes(slices[i]);
+            } else {
+                continue;  // Ignorar filtros no implementados aún
+            }
+
+            // Abrir writerFiltered solo una vez
+            if (!writerFilteredReady) {
+                writerFiltered.open(pathFiltered.toStdString(),
+                                    cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+                                    fps, frameSize, true);
+                if (!writerFiltered.isOpened()) {
+                    QMessageBox::critical(this, "Error", "No se pudo crear el archivo del video filtrado.");
+                    return;
+                }
+                writerFilteredReady = true;
             }
 
             cv::Mat resized, color;
@@ -294,7 +316,7 @@ void SlicePage::onGenerarVideoClicked() {
 
     writerOriginal.release();
     writerOverlay.release();
-    if (applyFilter) writerFiltered.release();
+    if (writerFilteredReady) writerFiltered.release();
 
     QMessageBox::information(this, "Videos generados", "Se han generado los siguientes videos:\n"
                                                        "- Imagen original\n"
@@ -370,6 +392,9 @@ void SlicePage::onFilterStatsButtonClicked() {
         filtered = applyThreshold(slices[currentZ]);
     } else if (selectedFilter == "Contrast Stretching") {
         filtered = aplicarContrastStretching(slices[currentZ]);
+    } else if (selectedFilter == "Detección de Bordes") {
+        filtered = aplicarDeteccionBordes(slices[currentZ]);
+
     } else {
         QMessageBox::warning(this, "Advertencia", "Selecciona un filtro válido antes de continuar.");
         return;

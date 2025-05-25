@@ -21,7 +21,7 @@ add_definitions(${ITK_DEFINITIONS})
 
 # OpenCV
 set(OpenCV_DIR "/home/bryam/Música/opencv/build/lib/cmake/opencv4")
-find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui videoio)  # ✅ AÑADIDO videoio
+find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui videoio)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Fuentes
@@ -61,6 +61,9 @@ set(PROJECT_SOURCES
     utils/statics_generator/statswindow.h
     filters/filter_contrast/contrast.cpp
     filters/filter_contrast/contrast.h
+    filters/filter_bordes/bordes.cpp
+    filters/filter_bordes/bordes.h
+
 )
 
 # Crear ejecutable
@@ -68,6 +71,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(VisorNiftiQt
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+
     )
 else()
     if(ANDROID)
