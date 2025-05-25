@@ -214,45 +214,92 @@ void SlicePage::disableControls() {
 }
 
 void SlicePage::onGenerarVideoClicked() {
-    if (slices.empty()) {
-        QMessageBox::warning(this, "Advertencia", "No hay cortes cargados para generar video.");
+    if (slices.empty() || masks.empty()) {
+        QMessageBox::warning(this, "Advertencia", "No hay datos cargados para generar videos.");
         return;
     }
 
-    // Asegurar directorio de salida
+    // Crear directorio de salida
     QDir baseDir(QCoreApplication::applicationDirPath());
     baseDir.cdUp();  // build/
     baseDir.cdUp();  // VisorNiftiQt/
     QString outputDir = baseDir.filePath("output/out_video");
     QDir().mkpath(outputDir);
-    QString videoPath = outputDir + "/stack.avi";
 
-    // Obtener tamaño base
+    QString pathOriginal = outputDir + "/stack_original.avi";
+    QString pathOverlay  = outputDir + "/stack_overlay.avi";
+    QString pathFiltered = outputDir + "/stack_filtered.avi";
+
     cv::Size frameSize(300, 300);
     int fps = 10;
 
-    // Crear video
-    cv::VideoWriter writer(videoPath.toStdString(),
-                           cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
-                           fps,
-                           frameSize,
-                           true);  // 3 canales (color)
+    cv::VideoWriter writerOriginal(pathOriginal.toStdString(),
+                                   cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+                                   fps, frameSize, true);
 
-    if (!writer.isOpened()) {
-        QMessageBox::critical(this, "Error", "No se pudo crear el archivo de video.");
+    cv::VideoWriter writerOverlay(pathOverlay.toStdString(),
+                                  cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+                                  fps, frameSize, true);
+
+    cv::VideoWriter writerFiltered;
+    bool applyFilter = false;
+    QString selectedFilter = filterComboBox->currentText();
+
+    if (selectedFilter == "Umbralización" || selectedFilter == "Contrast Stretching") {
+        writerFiltered.open(pathFiltered.toStdString(),
+                            cv::VideoWriter::fourcc('M', 'J', 'P', 'G'),
+                            fps, frameSize, true);
+        applyFilter = true;
+    }
+
+    if (!writerOriginal.isOpened() || !writerOverlay.isOpened() || (applyFilter && !writerFiltered.isOpened())) {
+        QMessageBox::critical(this, "Error", "No se pudo crear uno o más archivos de video.");
         return;
     }
 
-    for (const auto& slice : slices) {
-        cv::Mat resized, color;
-        cv::resize(slice, resized, frameSize);
-        cv::cvtColor(resized, color, cv::COLOR_GRAY2BGR);  // Convertir a 3 canales
-        writer.write(color);
+    for (size_t i = 0; i < slices.size(); ++i) {
+        // Original en color (grises convertidos a BGR)
+        cv::Mat imgGray, imgBGR;
+        cv::resize(slices[i], imgGray, frameSize);
+        cv::cvtColor(imgGray, imgBGR, cv::COLOR_GRAY2BGR);
+        writerOriginal.write(imgBGR);
+
+        // Overlay: máscara en rojo sobre la imagen
+        cv::Mat overlay;
+        cv::cvtColor(imgGray, overlay, cv::COLOR_GRAY2BGR);
+        for (int y = 0; y < overlay.rows; ++y) {
+            for (int x = 0; x < overlay.cols; ++x) {
+                if (masks[i].at<uchar>(y * masks[i].rows / overlay.rows, x * masks[i].cols / overlay.cols) > 0) {
+                    overlay.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255); // rojo
+                }
+            }
+        }
+        writerOverlay.write(overlay);
+
+        // Filtro actual
+        if (applyFilter) {
+            cv::Mat filtered;
+            if (selectedFilter == "Umbralización") {
+                filtered = applyThreshold(slices[i]);
+            } else if (selectedFilter == "Contrast Stretching") {
+                filtered = aplicarContrastStretching(slices[i]);
+            }
+
+            cv::Mat resized, color;
+            cv::resize(filtered, resized, frameSize);
+            cv::cvtColor(resized, color, cv::COLOR_GRAY2BGR);
+            writerFiltered.write(color);
+        }
     }
 
-    writer.release();
+    writerOriginal.release();
+    writerOverlay.release();
+    if (applyFilter) writerFiltered.release();
 
-    QMessageBox::information(this, "Video generado", "✅ Video guardado en:\n" + videoPath);
+    QMessageBox::information(this, "Videos generados", "Se han generado los siguientes videos:\n"
+                                                       "- Imagen original\n"
+                                                       "- Imagen con máscara\n"
+                                                       "- Imagen filtrada (si aplica)\n\nGuardados en:\n" + outputDir);
 }
 
 
