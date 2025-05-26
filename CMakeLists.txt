@@ -67,6 +67,8 @@ set(PROJECT_SOURCES
     filters/filter_color_thresh/color_thresh.h
     filters/filter_pixel_ops/pixel_ops.cpp
     filters/filter_pixel_ops/pixel_ops.h
+    filters/filter_suavizado/suavizado.cpp
+    filters/filter_suavizado/suavizado.h
 
 
 )
