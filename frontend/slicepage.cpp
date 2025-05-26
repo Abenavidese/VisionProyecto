@@ -22,6 +22,7 @@
 #include "filter_color_thresh/color_thresh.h"
 #include "filter_pixel_ops/pixel_ops.h"
 #include "filter_suavizado/suavizado.h"
+#include "filter_morfologia/morfologia.h"
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -60,6 +61,7 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox->addItem("Binarización por Color");
     filterComboBox->addItem("Inversión de Intensidad");
     filterComboBox->addItem("Suavizado Gaussiano");
+    filterComboBox->addItem("Dilatación");
 
 
 
@@ -215,6 +217,11 @@ void SlicePage::displaySlice() {
         QImage out(suavizada.data, suavizada.cols, suavizada.rows, suavizada.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
         }
+    else if (selectedFilter == "Dilatación") {
+        cv::Mat dilatada = aplicarDilatacion(masks[currentZ]);
+        QImage out(dilatada.data, dilatada.cols, dilatada.rows, dilatada.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+        }
 
     else {
         filteredLabel->clear();
@@ -324,6 +331,9 @@ void SlicePage::onGenerarVideoClicked() {
             }
             else if (selectedFilter == "Suavizado Gaussiano") {
                 filtered = aplicarSuavizadoGaussiano(slices[i]);
+            }
+            else if (selectedFilter == "Dilatación") {
+                filtered = aplicarDilatacion(masks[i]);
             }
 
 
@@ -437,6 +447,9 @@ void SlicePage::onFilterStatsButtonClicked() {
     }
       else if (selectedFilter == "Suavizado Gaussiano") {
         filtered = aplicarSuavizadoGaussiano(slices[currentZ]);
+    }
+    else if (selectedFilter == "Dilatación") {
+        filtered = aplicarDilatacion(masks[currentZ]);
     }
 
     else {

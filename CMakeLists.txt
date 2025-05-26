@@ -69,6 +69,8 @@ set(PROJECT_SOURCES
     filters/filter_pixel_ops/pixel_ops.h
     filters/filter_suavizado/suavizado.cpp
     filters/filter_suavizado/suavizado.h
+    filters/filter_morfologia/morfologia.cpp
+    filters/filter_morfologia/morfologia.h
 
 
 )
@@ -80,6 +82,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         ${PROJECT_SOURCES}
         filters/filter_color_thresh/color_thresh.h filters/filter_color_thresh/color_thresh.cpp
         filters/filter_pixel_ops/pixel_ops.h filters/filter_pixel_ops/pixel_ops.cpp
+        filters/filter_morfologia/morfologia.h filters/filter_morfologia/morfologia.cpp
 
     )
 else()
