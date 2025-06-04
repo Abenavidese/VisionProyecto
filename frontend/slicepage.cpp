@@ -23,6 +23,7 @@
 #include "filter_pixel_ops/pixel_ops.h"
 #include "filter_suavizado/suavizado.h"
 #include "filter_morfologia/morfologia.h"
+#include "filter_bitwise/bitwise.h"
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -63,7 +64,11 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox->addItem("Suavizado Gaussiano");
     filterComboBox->addItem("Dilatación");
 
-
+    // Bitwise directamente aquí
+    filterComboBox->addItem("Bitwise NOT");
+    filterComboBox->addItem("Bitwise AND");
+    filterComboBox->addItem("Bitwise OR");
+    filterComboBox->addItem("Bitwise XOR");
 
     filterComboBox->setEnabled(false);
 
@@ -196,32 +201,53 @@ void SlicePage::displaySlice() {
         cv::Mat stretched = aplicarContrastStretching(img);
         QImage out(stretched.data, stretched.cols, stretched.rows, stretched.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-        }
-     else if (selectedFilter == "Detección de Bordes") {
+    }
+    else if (selectedFilter == "Detección de Bordes") {
         cv::Mat bordes = aplicarDeteccionBordes(img);
         QImage out(bordes.data, bordes.cols, bordes.rows, bordes.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-        }
+    }
     else if (selectedFilter == "Binarización por Color") {
         cv::Mat binarizada = aplicarColorThreshold(img, 100, 200);  // puedes hacer estos valores dinámicos luego
         QImage out(binarizada.data, binarizada.cols, binarizada.rows, binarizada.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-        }
+    }
     else if (selectedFilter == "Inversión de Intensidad") {
         cv::Mat invertida = aplicarInversion(img);
         QImage out(invertida.data, invertida.cols, invertida.rows, invertida.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-        }
+    }
     else if (selectedFilter == "Suavizado Gaussiano") {
         cv::Mat suavizada = aplicarSuavizadoGaussiano(img);
         QImage out(suavizada.data, suavizada.cols, suavizada.rows, suavizada.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-        }
+    }
     else if (selectedFilter == "Dilatación") {
         cv::Mat dilatada = aplicarDilatacion(masks[currentZ]);
         QImage out(dilatada.data, dilatada.cols, dilatada.rows, dilatada.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-        }
+    }
+    else if (selectedFilter == "Bitwise NOT") {
+        cv::Mat resultado = applyBitwiseNOT(img);
+        QImage out(resultado.data, resultado.cols, resultado.rows, resultado.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+
+    } else if (selectedFilter == "Bitwise AND") {
+        cv::Mat resultado = applyBitwiseAND(img, mask);
+        QImage out(resultado.data, resultado.cols, resultado.rows, resultado.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+
+    } else if (selectedFilter == "Bitwise OR") {
+        cv::Mat resultado = applyBitwiseOR(img, mask);
+        QImage out(resultado.data, resultado.cols, resultado.rows, resultado.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+
+    } else if (selectedFilter == "Bitwise XOR") {
+        cv::Mat resultado = applyBitwiseXOR(img, mask);
+        QImage out(resultado.data, resultado.cols, resultado.rows, resultado.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+    }
+
 
     else {
         filteredLabel->clear();
@@ -320,20 +346,30 @@ void SlicePage::onGenerarVideoClicked() {
             } else if (selectedFilter == "Detección de Bordes") {
                 filtered = aplicarDeteccionBordes(slices[i]);
             }
-             else if (selectedFilter == "Binarización por Color") {
+            else if (selectedFilter == "Binarización por Color") {
                 filtered = aplicarColorThreshold(slices[i]);
             }
             else if (selectedFilter == "Inversión de Intensidad") {
                 filtered = aplicarInversion(slices[i]);
             }
-            else if (selectedFilter == "Inversión de Intensidad") {
-                filtered = aplicarInversion(slices[currentZ]);
-            }
+
             else if (selectedFilter == "Suavizado Gaussiano") {
                 filtered = aplicarSuavizadoGaussiano(slices[i]);
             }
             else if (selectedFilter == "Dilatación") {
                 filtered = aplicarDilatacion(masks[i]);
+            }
+            else if (selectedFilter == "Bitwise NOT") {
+                filtered = applyBitwiseNOT(slices[i]);
+            }
+            else if (selectedFilter == "Bitwise AND") {
+                filtered = applyBitwiseAND(slices[i], masks[i]);
+            }
+            else if (selectedFilter == "Bitwise OR") {
+                filtered = applyBitwiseOR(slices[i], masks[i]);
+            }
+            else if (selectedFilter == "Bitwise XOR") {
+                filtered = applyBitwiseXOR(slices[i], masks[i]);
             }
 
 
@@ -442,14 +478,27 @@ void SlicePage::onFilterStatsButtonClicked() {
         filtered = aplicarDeteccionBordes(slices[currentZ]);
 
     }
-      else if (selectedFilter == "Binarización por Color") {
+    else if (selectedFilter == "Binarización por Color") {
         filtered = aplicarColorThreshold(slices[currentZ]);
     }
-      else if (selectedFilter == "Suavizado Gaussiano") {
+    else if (selectedFilter == "Suavizado Gaussiano") {
         filtered = aplicarSuavizadoGaussiano(slices[currentZ]);
     }
     else if (selectedFilter == "Dilatación") {
         filtered = aplicarDilatacion(masks[currentZ]);
+    }
+
+    else if (selectedFilter == "NOT") {
+        filtered = applyBitwiseNOT(slices[currentZ]);
+
+    } else if (selectedFilter == "AND") {
+        filtered = applyBitwiseAND(slices[currentZ], masks[currentZ]);
+
+    } else if (selectedFilter == "OR") {
+        filtered = applyBitwiseOR(slices[currentZ], masks[currentZ]);
+
+    } else if (selectedFilter == "XOR") {
+        filtered = applyBitwiseXOR(slices[currentZ], masks[currentZ]);
     }
 
     else {
@@ -544,4 +593,3 @@ void SlicePage::analizarCarpeta(const QString& relativePath, const QString& tipo
         w->show();
     }
 }
-
