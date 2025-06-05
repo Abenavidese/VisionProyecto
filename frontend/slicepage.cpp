@@ -24,6 +24,7 @@
 #include "filter_suavizado/suavizado.h"
 #include "filter_morfologia/morfologia.h"
 #include "filter_bitwise/bitwise.h"
+#include "filter_bilateral/filter_bilateral.h"
 
 SlicePage::SlicePage(QWidget *parent)
     : QMainWindow(parent),
@@ -63,6 +64,7 @@ SlicePage::SlicePage(QWidget *parent)
     filterComboBox->addItem("Inversión de Intensidad");
     filterComboBox->addItem("Suavizado Gaussiano");
     filterComboBox->addItem("Dilatación");
+    filterComboBox->addItem("Filtro Bilateral");
 
     // Bitwise directamente aquí
     filterComboBox->addItem("Bitwise NOT");
@@ -87,27 +89,30 @@ SlicePage::SlicePage(QWidget *parent)
     QPushButton* analizarFiltroButton = new QPushButton("📂 Analizar carpeta Filtro", this);
 
 
-    // Labels para mostrar imágenes
+    // Labels para mostrar imágenes con mejoras
     originalLabel = new QLabel(this);
     originalLabel->setAlignment(Qt::AlignCenter);
-    originalLabel->setStyleSheet("border: 1px solid black;");
-    originalLabel->setScaledContents(true);
+    originalLabel->setStyleSheet("border: 1px solid black; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);");
+    originalLabel->setScaledContents(true); // Escala la imagen sin distorsión
+    originalLabel->setFixedSize(300, 300); // Establece un tamaño fijo para las imágenes
 
     overlayLabel = new QLabel(this);
     overlayLabel->setAlignment(Qt::AlignCenter);
-    overlayLabel->setStyleSheet("border: 1px solid black;");
+    overlayLabel->setStyleSheet("border: 1px solid black; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);");
     overlayLabel->setScaledContents(true);
+    overlayLabel->setFixedSize(300, 300);
 
     tumorOnlyLabel = new QLabel(this);
     tumorOnlyLabel->setAlignment(Qt::AlignCenter);
-    tumorOnlyLabel->setStyleSheet("border: 1px solid black;");
+    tumorOnlyLabel->setStyleSheet("border: 1px solid black; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);");
     tumorOnlyLabel->setScaledContents(true);
+    tumorOnlyLabel->setFixedSize(300, 300);
 
     filteredLabel = new QLabel(this);
     filteredLabel->setAlignment(Qt::AlignCenter);
-    filteredLabel->setStyleSheet("border: 1px solid black;");
+    filteredLabel->setStyleSheet("border: 1px solid black; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.5);");
     filteredLabel->setScaledContents(true);
-
+    filteredLabel->setFixedSize(300, 300);
 
     // Layout principal
     QWidget* centralWidget = new QWidget(this);
@@ -247,6 +252,11 @@ void SlicePage::displaySlice() {
         QImage out(resultado.data, resultado.cols, resultado.rows, resultado.step, QImage::Format_Grayscale8);
         filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
     }
+    else if (selectedFilter == "Filtro Bilateral") {
+        cv::Mat bilateral = aplicarFiltroBilateral(img);
+        QImage out(bilateral.data, bilateral.cols, bilateral.rows, bilateral.step, QImage::Format_Grayscale8);
+        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
+    }
 
 
     else {
@@ -359,6 +369,11 @@ void SlicePage::onGenerarVideoClicked() {
             else if (selectedFilter == "Dilatación") {
                 filtered = aplicarDilatacion(masks[i]);
             }
+            else if (selectedFilter == "Filtro Bilateral") {
+                filtered = aplicarFiltroBilateral(slices[i]);
+            }
+
+
             else if (selectedFilter == "Bitwise NOT") {
                 filtered = applyBitwiseNOT(slices[i]);
             }
@@ -487,7 +502,9 @@ void SlicePage::onFilterStatsButtonClicked() {
     else if (selectedFilter == "Dilatación") {
         filtered = aplicarDilatacion(masks[currentZ]);
     }
-
+    else if (selectedFilter == "Filtro Bilateral") {
+        filtered = aplicarFiltroBilateral(slices[currentZ]);
+    }
     else if (selectedFilter == "NOT") {
         filtered = applyBitwiseNOT(slices[currentZ]);
 
