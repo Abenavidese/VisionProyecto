@@ -8,4 +8,7 @@ cv::Mat applyBitwiseAND(const cv::Mat& img, const cv::Mat& mask);
 cv::Mat applyBitwiseOR(const cv::Mat& img, const cv::Mat& mask);
 cv::Mat applyBitwiseXOR(const cv::Mat& img, const cv::Mat& mask);
 
+// Asegurarse de que las matrices sean del mismo tamaño y tipo
+bool checkValidBitwiseOperation(const cv::Mat& img, const cv::Mat& mask);
+
 #endif // BITWISE_H

@@ -505,16 +505,16 @@ void SlicePage::onFilterStatsButtonClicked() {
     else if (selectedFilter == "Filtro Bilateral") {
         filtered = aplicarFiltroBilateral(slices[currentZ]);
     }
-    else if (selectedFilter == "NOT") {
+    else if (selectedFilter == "Bitwise NOT") {
         filtered = applyBitwiseNOT(slices[currentZ]);
 
-    } else if (selectedFilter == "AND") {
+    } else if (selectedFilter == "Bitwise AND") {
         filtered = applyBitwiseAND(slices[currentZ], masks[currentZ]);
 
-    } else if (selectedFilter == "OR") {
+    } else if (selectedFilter == "Bitwise OR") {
         filtered = applyBitwiseOR(slices[currentZ], masks[currentZ]);
 
-    } else if (selectedFilter == "XOR") {
+    } else if (selectedFilter == "Bitwise XOR") {
         filtered = applyBitwiseXOR(slices[currentZ], masks[currentZ]);
     }
 

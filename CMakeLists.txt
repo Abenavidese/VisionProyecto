@@ -13,14 +13,14 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets PrintSupport)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets PrintSupport)
 
 # ITK
-set(ITK_DIR "usr/local/lib/cmake/ITK-6.0")
+set(ITK_DIR "/usr/local/lib/cmake/ITK-6.0")
 find_package(ITK REQUIRED)
 include_directories(${ITK_INCLUDE_DIRS})
 link_directories(${ITK_LIBRARY_DIRS})
 add_definitions(${ITK_DEFINITIONS})
 
 # OpenCV
-set(OpenCV_DIR "/home/bryam/Música/opencv/build/lib/cmake/opencv4")
+set(OpenCV_DIR "/home/ubuntu/aplicaciones/Librerias/opencv/opencvi/lib/cmake/opencv4")
 find_package(OpenCV REQUIRED COMPONENTS core imgproc highgui videoio)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
