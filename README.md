@@ -1,106 +1,102 @@
-1- CREAR CARPETA DEL FILTRO
+## Visor NIfTI - Aplicación en C++ con OpenCV e ITK
 
--Cick derecho en filter ---> add new
--En add new agregar individualmente el cpp y el h, ya que agregar ambos a la vez no permite crear una nueva carpeta, por ejemplo filter_tr/tr.h , no lo permite, agregando indivualmente si permite
+### Descripción
+Esta es una aplicación de escritorio en C++ que permite visualizar imágenes médicas en formato NIfTI (.nii). Utiliza las bibliotecas OpenCV para el procesamiento de imágenes y ITK para el manejo de archivos NIfTI. La aplicación está diseñada para permitir la visualización de cortes (slices) de imágenes de resonancia magnética (RM), con la capacidad de aplicar filtros y realizar operaciones básicas sobre la imagen.
 
--Agregar el .cpp y el .h
+### Características
 
-filter_gaussiano/gaussiano.cpp
-filter_gaussiano/gaussiano.h
-
-con esto se crea la carpeta gaussiano dentro del filter y se le agrega el header y el soucer file
-
-
-2- Agregar los metodos
-
-Primero definir el gaussiano.h
-
-Luego definir el gaussiano.cpp
-
-3 - Actualizar el CMAKE
-
-Ir a #fuentes en el CMAKE
-
-Acuatualizar el cmake con la nueva carpeta, guardar el archivo y esperar que compile para verificar que no hay errores
-
-ejemplo
-
-    filters/filter_gaussiano/gaussiano.cpp
-    filters/filter_gaussiano/gaussiano.h
+- [x] **Visualización interactiva de imágenes NIfTI.**
+- [x] **Navegación entre diferentes cortes (slices) de la imagen.**
+- [x] **Filtros aplicables como ecualización, suavizado y detección de bordes.**
+- [x] **Resaltado de áreas de interés, como tumores, utilizando técnicas de segmentación.**
+- [x] **Generación de video a partir de los cortes con transiciones suaves.**
+- [x] **Interfaz gráfica creada con Qt.**
 
 
-4- SLICE PAGE .CPP
+### Requisitos
+- C++11 o superior
+- CMake para la configuración del proyecto.
+- OpenCV (4.5.0 o superior)
+- ITK (5.2 o superior)
+- Qt (5.15 o superior)
+- Compilador C++ compatible (como GCC o Clang)
 
-INCLUIR EL .H AL INCIO DEL ARCHIVO
+### Instalación
+Clona el repositorio:
+```text
+git clone https://github.com/Abenavidese/VisionProyecto.git
+```
 
-#include "filter_contrast/contrast.h"
+Accede al directorio del proyecto:
+```text
+cd VisionProyecto
+```
 
-IR Y AGREGAR EL NUEVO METODO AL COMBO BOX
+Crea un directorio para la compilación:
+```text
+mkdir build
+cd build
+```
+Ejecuta CMake para generar los archivos de construcción:
 
-    filterComboBox = new QComboBox(this);
-    filterComboBox->addItem("-- Elegir filtro --");
-    filterComboBox->addItem("Umbralización");
-    filterComboBox->addItem("Contrast Stretching");
+```text
+cmake ..
+```
 
-    filterComboBox->setEnabled(false);
+Compila el proyecto:
+```text
+make
+```
+
+Ejecuta la aplicación:
+```text
+./visor_nifti
+```
+## Uso
+
+- Abre la aplicación y carga un archivo NIfTI (.nii).
+- Usa los controles deslizantes para navegar entre los diferentes cortes de la imagen.
+- Aplica filtros como suavizado, detección de bordes o ecualización para mejorar la visualización.
+- Resalta áreas de interés, como tumores, utilizando las herramientas de segmentación disponibles.
+- Puedes generar un video de los cortes con transiciones suaves.
+
+## Estructura del proyecto
+
+```text
+visor-nifti/
+│
+├── CMakeLists.txt        # Archivo de configuración de CMake
+├── src/                  # Código fuente de la aplicación
+│   ├── main.cpp          # Punto de entrada de la aplicación
+│   ├── nifti_loader.cpp  # Funciones para cargar imágenes NIfTI
+│   ├── image_processor.cpp  # Funciones para procesar imágenes
+│   └── ...
+├── include/              # Archivos de cabecera
+│   ├── nifti_loader.h    # Definiciones de las funciones de carga
+│   ├── image_processor.h  # Definiciones de funciones de procesamiento
+│   └── ...
+├── output/               # Archivos de recursos (imágenes, iconos, etc.)
+├── README.md             # Este archivo
+└── ...
+```
+
+## AUTORES
+
+- ANTHONY ALEXANDER BENAVIDES ERIQUE
+- BRYAM JESUS PERALTA NAVARRO
 
 
 
-IR A VOID DISPLAY SLICE Y ACTUALIZAR EL METODO CON EL NUEVO FILTRO
-
-
-void SlicePage::displaySlice() {
-    if (slices.empty() || masks.empty()) {
-        clearImages();
-        return;
-    }
-
-    const cv::Mat& img = slices[currentZ];
-    const cv::Mat& mask = masks[currentZ];
-
-    originalLabel->setPixmap(QPixmap::fromImage(renderOriginal(img)));
-    overlayLabel->setPixmap(QPixmap::fromImage(renderOverlay(img, mask, showMask)));
-    tumorOnlyLabel->setPixmap(QPixmap::fromImage(renderTumorOnly(mask, showTumorOnly)));
-
-    QString selectedFilter = filterComboBox->currentText();
-
-    if (selectedFilter == "Umbralización") {
-        filteredLabel->setPixmap(QPixmap::fromImage(renderThresholded(img)));
-    } else if (selectedFilter == "Contrast Stretching") {
-        cv::Mat stretched = aplicarContrastStretching(img);
-        QImage out(stretched.data, stretched.cols, stretched.rows, stretched.step, QImage::Format_Grayscale8);
-        filteredLabel->setPixmap(QPixmap::fromImage(out.copy()));
-    } else {
-        filteredLabel->clear();
-    }
-}
 
 
 
-ACTUALIZAR SELECCIONAR FILTRO
 
 
-void SlicePage::onFilterStatsButtonClicked() {
-    if (slices.empty() || masks.empty()) {
-        QMessageBox::warning(this, "Advertencia", "No hay datos disponibles para mostrar estadísticas.");
-        return;
-    }
 
-    QString selectedFilter = filterComboBox->currentText();
 
-    cv::Mat filtered;
 
-    if (selectedFilter == "Umbralización") {
-        filtered = applyThreshold(slices[currentZ]);
-    } else if (selectedFilter == "Contrast Stretching") {
-        filtered = aplicarContrastStretching(slices[currentZ]);
-    } else {
-        QMessageBox::warning(this, "Advertencia", "Selecciona un filtro válido antes de continuar.");
-        return;
-    }
 
-    StatsWindow* filterStatsWindow = new StatsWindow("Estadísticas del Filtro", 800, 600);
-    filterStatsWindow->setAttribute(Qt::WA_DeleteOnClose);  // Se libera al cerrar
-    filterStatsWindow->updateStats(filtered, masks[currentZ]);
-    filterStatsWindow->show();  // Ventana independiente
-}
+
+
+
+
